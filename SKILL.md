@@ -1,6 +1,6 @@
 ---
 name: ascend-pd-benchmark
-description: 按用户约定运行或复核昇腾多机 PD 分离推理压测。适用于 AISBench、纯 P、纯 D、完整 PD、同构与异构对照、TTFT 对齐补测，以及按指定表头整理吞吐结果。
+description: 按用户约定运行或复核昇腾多机 PD 分离推理压测。适用于 AISBench、纯 P、纯 D、完整 PD、同构与异构对照、TTFT 对齐补测、吞吐结果整理，以及 Ascend PyTorch 多卡 profiling 采集与 MindStudio 交付。
 ---
 
 # 昇腾 PD 分离压测
@@ -27,6 +27,8 @@ description: 按用户约定运行或复核昇腾多机 PD 分离推理压测。
 1. 按本 case 的实际输入长度、输出长度和目标并发预热。确认并发确实上来、请求成功，单独保存预热记录。服务保持热态。预热后按 case 准备缓存，**Cache0 清双端并验证正式轮零命中**，Cache90/100 只按原方案预填目标前缀。正式发压前后取计数器差值。
 2. 正式轮独立计时。逐轮校验发送、成功、失败、实际输入/输出长度、实际命中率和采样窗口。测稳定性保留各轮值与均值；单轮标明单轮。用户要求调并发、复现参考、排查异常或采 profiling 时，读[复测与诊断](references/measure.md)。
 3. 直接在回复里给可粘贴 Excel 的 TSV，使用[交付表头和计算口径](references/results.md)。附本轮服务脚本、压测入口及原始结果路径，能从汇总行追到原始轮次。
+
+交付 MindStudio 多卡时间线时，每轮保留各 rank 完整的 `*_ascend_pt` 目录，给用户可直接导入的共同父目录。按[多卡 profiling 交付与验收](references/measure.md#多卡-profiling-交付与验收)核对卡号和导入结果。
 
 ## 后续迭代
 

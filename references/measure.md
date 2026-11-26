@@ -30,3 +30,10 @@
 先确认分子分母（异构/同构，或完整 PD/同组网纯 P）、输出长度、实测缓存命中、在途并发和窗口。闭环下可用平均在途数 / 平均 E2E 秒近似核对 QPS。输出从 1 增到 1024 会延长并发槽位占用；缓存命中从 90% 降到 87% 会增加未命中 token。分别检查 P 排队/prefill、KV 交付、D 排队/decode 和代理时间。P 端命中不能证明 D 已收到 KV。缺少阶段证据时写明未决原因。
 
 性能基线关闭 profiling。需要算子分析时另开同负载采集轮，按用户指定的 torch profiler 配置，在目标窗口通过 `/start_profile`、`/stop_profile` 触发，核实 P/D、rank、起止时间、产物可在 MindStudio 打开。按轮单独存入用户指定目录（历史为 `D:\profilerData`）。链路系统采样、整卡 HBM/LLC 计数和算子 trace 各自说明采集范围。多 rank 有重叠，算子时长求和不能当作端到端关键路径；旧模型或异常尖峰不能证明当前模型的某算子带宽饱和。
+
+## 多卡 profiling 交付与验收
+
+1. **保留原始目录结构。** Ascend PyTorch Profiler 导出完成后，把同一轮、同一采集窗口的各 rank 完整 `*_ascend_pt` 目录复制到同一个父目录。保留原目录名、`profiler_info_<rank>.json` 和 `ASCEND_PROFILER_OUTPUT/` 下的数据库等产物。不同轮次或窗口分别存放。把多份单卡 DB 平铺到一个目录，可能导致 MindStudio 的 Card Filter 只列出一张卡。
+2. **核对本地副本。** 按实际采集的主机和 rank 清点目录。对 DB 格式，核对 `profiler_info_<rank>.json`、数据库 `RANK_DEVICE_MAP` 中的 rank 与设备映射，以及复制前后各主库的 SHA-256。多机时按主机核对设备号，同一物理卡号可以出现在不同主机上。
+3. **给对导入入口。** 多卡对比时，新建 MindStudio 工程并导入这些 `*_ascend_pt` 的共同父目录；单卡时间线可直接导入对应的 `ASCEND_PROFILER_OUTPUT/ascend_pytorch_profiler_<rank>.db`。回复里给出实际路径和本轮预期卡号。
+4. **在 Timeline 验收。** 查看各 Host 的 Card Filter 是否列出全部预期卡号，并切换卡号检查目标泳道。若筛选框只有一张卡，先检查导入层级和分卡目录是否完整；若之前只复制了散放的 DB，从原始采集位置补齐目录后重新导入，通常无需重采。无法打开界面时，分别说明已完成的文件校验和待确认的界面结果。
