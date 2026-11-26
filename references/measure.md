@@ -31,6 +31,8 @@
 
 性能基线关闭 profiling。需要算子分析时另开同负载采集轮，按用户指定的 torch profiler 配置，在目标窗口通过 `/start_profile`、`/stop_profile` 触发，核实 P/D、rank、起止时间、产物可在 MindStudio 打开。按轮单独存入用户指定目录（历史为 `D:\profilerData`）。链路系统采样、整卡 HBM/LLC 计数和算子 trace 各自说明采集范围。多 rank 有重叠，算子时长求和不能当作端到端关键路径；旧模型或异常尖峰不能证明当前模型的某算子带宽饱和。
 
+验证模型是否进入某个算子分支时，把加载 `sitecustomize.py`、`sys.monitoring` 或 Python 行级回调的服务作为诊断实例。记录命中的 rank 和输入形状后，从启动环境移除探针，重启被观测的服务并按相同负载预热，再测正式 QPS 和 TTFT。仅停止打印或只记录首个命中，仍应通过无探针复测核对开销。
+
 ## 多卡 profiling 交付与验收
 
 1. **保留原始目录结构。** Ascend PyTorch Profiler 导出完成后，把同一轮、同一采集窗口的各 rank 完整 `*_ascend_pt` 目录复制到同一个父目录。保留原目录名、`profiler_info_<rank>.json` 和 `ASCEND_PROFILER_OUTPUT/` 下的数据库等产物。不同轮次或窗口分别存放。把多份单卡 DB 平铺到一个目录，可能导致 MindStudio 的 Card Filter 只列出一张卡。
